@@ -13,7 +13,11 @@ const res = await build({
   legalComments: 'none',
 });
 const js = res.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-const css = readFileSync('src/styles.css', 'utf8');
+// шрифты встраиваем, чтобы вид не зависел от доступа к Google Fonts
+const fonts = JSON.parse(readFileSync('assets/fonts/fonts.json', 'utf8'))
+  .map((f) => `@font-face{font-family:'${f.family}';font-style:normal;font-weight:400 600;font-display:swap;src:url(data:font/woff2;base64,${readFileSync('assets/fonts/' + f.file).toString('base64')}) format('woff2');unicode-range:${f.range}}`)
+  .join('');
+const css = fonts + readFileSync('src/styles.css', 'utf8');
 const html = readFileSync('src/index.html', 'utf8')
   .replace('/*CSS*/', () => css)
   .replace('/*JS*/', () => js);

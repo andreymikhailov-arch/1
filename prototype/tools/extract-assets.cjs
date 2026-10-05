@@ -18,9 +18,9 @@ const slabIds = [
 ];
 
 const renders = {
-  atlas: { file: '5.jpg', left: 120, top: 395, width: 1060, height: 380 },
-  samurai: { file: '4.jpg', left: 115, top: 400, width: 1060, height: 370 },
-  infinity: { file: '2.jpg', left: 85, top: 395, width: 1110, height: 360 },
+  atlas: { file: '5.jpg', left: 120, top: 380, width: 1060, height: 423 },
+  samurai: { file: '4.jpg', left: 115, top: 390, width: 1060, height: 392 },
+  infinity: { file: '2.jpg', left: 104, top: 385, width: 1090, height: 415 },
 };
 
 const finishes = {
@@ -47,7 +47,8 @@ const finishes = {
     }
   }
   for (const [id, r] of Object.entries(renders)) {
-    await sharp(path.join(SRC, r.file)).extract(r).jpeg({ quality: 84, mozjpeg: true })
+    const { file, ...area } = r;
+    await sharp(path.join(SRC, file)).extract(area).jpeg({ quality: 84, mozjpeg: true })
       .toFile(path.join(OUT, 'renders', id + '.jpg'));
   }
   for (const [id, f] of Object.entries(finishes)) {

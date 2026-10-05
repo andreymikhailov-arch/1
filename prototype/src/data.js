@@ -68,8 +68,8 @@ export const FINISHES = [
   { id: 'black', name: 'Глубокий чёрный', group: 'std', img: finBlack, color: '#151515', metalness: 0.35, roughness: 0.48 },
   { id: 'white', name: 'Белый', group: 'std', img: finWhite, color: '#e7e5e0', metalness: 0, roughness: 0.4 },
   { id: 'velvet', name: 'Серо-бежевый бархат', group: 'std', img: finVelvet, color: '#6d5f51', metalness: 0.25, roughness: 0.82 },
-  { id: 'brass', name: 'Латунь брашированная', group: 'selection', img: finBrass, color: '#a48c57', metalness: 1, roughness: 0.3, brushed: true },
-  { id: 'bronze', name: 'Бронза брашированная', group: 'selection', img: finBronze, color: '#7a5a42', metalness: 1, roughness: 0.32, brushed: true },
+  { id: 'brass', name: 'Латунь брашированная', group: 'selection', img: finBrass, color: '#8e7c4d', metalness: 1, roughness: 0.42, brushed: true },
+  { id: 'bronze', name: 'Бронза брашированная', group: 'selection', img: finBronze, color: '#6a4f3b', metalness: 1, roughness: 0.44, brushed: true },
 ];
 
 export const SIZES = [

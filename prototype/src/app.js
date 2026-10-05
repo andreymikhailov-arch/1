@@ -55,7 +55,7 @@ const slabWall = () => `
         <h3>${g.name}</h3>
         <div class="wall__row">
           ${SLABS.filter((s) => s.group === g.id).map((s) => `
-            <a class="slab" href="#/table/atlas?slab=${s.id}">
+            <a class="slab" href="#/table/atlas?slab=${s.id}" aria-label="${s.name}">
               <span class="slab__img" style="background-image:url(${s.img})"></span>
               <span class="slab__name">${s.name}</span>
               <span class="slab__meta">${SURFACES[s.surface].label}</span>
@@ -132,18 +132,25 @@ function bindModels() {
 // ---------- страницы ----------
 
 function pageHome() {
+  const picks = ['golden-eye-glitter', 'manaos-green-pulido', 'camelot-pulido', 'wacom-forest-pulido', 'pandora-pulido', 'elyt-pulido', 'ravena-natural', 'plain-cement-coffee-grey-matt'];
   app.innerHTML = `
     <section class="hero">
       <div class="hero__copy">
         <h1>Обеденные столы из керамогранита и шпона</h1>
         <p class="lead">Плита, опора, форма и размер – собираете сами и сразу видите цену. Делаем около месяца.</p>
         <div class="hero__actions">
-          <a class="btn btn--primary" href="#/table/atlas">Собрать стол</a>
+          <a class="btn btn--primary" id="hero-cta" href="#/table/atlas">Собрать стол</a>
           <a class="link" href="#models">Все модели</a>
         </div>
-        <p class="hero__math"><span>16 плит</span> × <span>3 опоры</span> × <span>5 отделок</span> × <span>4 размера</span> × <span>2 формы</span> = <b>1 920 столов</b></p>
+        <div class="hero__pick">
+          <p class="hero__pick-label">Примерьте плиту <span id="hero-slab">${getSlab(picks[0]).name}</span></p>
+          <div class="hero__slabs">
+            ${picks.map((id, i) => `<button type="button" class="hero__slab${i === 0 ? ' is-on' : ''}" data-slab="${id}" aria-label="${getSlab(id).name}" style="background-image:url(${getSlab(id).img})"></button>`).join('')}
+          </div>
+        </div>
       </div>
-      <figure class="hero__visual"><img src="${getModel('atlas').render}" alt="Стол ATLAS с плитой керамогранита и латунной опорой"></figure>
+      <div class="hero__stage" id="hero-stage"></div>
+      <p class="hero__math"><span>16 плит</span> × <span>3 опоры</span> × <span>5 отделок</span> × <span>4 размера</span> × <span>2 формы</span> = <b>1 920 столов</b></p>
     </section>
     ${modelList()}
     ${slabWall()}
@@ -164,6 +171,34 @@ function pageHome() {
     </section>`;
   bindModels();
   drawVeneerArt();
+  initHero(picks);
+}
+
+async function initHero(picks) {
+  const el = document.getElementById('hero-stage');
+  const { Stage, Table } = await loadScene();
+  if (!document.body.contains(el)) return;
+  stage = new Stage(el);
+  const table = new Table(stage);
+  let cfg = { ...DEFAULT_CONFIG, model: 'atlas', slab: picks[0], size: '240x120', finish: 'brass' };
+  await table.apply(cfg);
+  table.view('hero');
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  stage.controls.enabled = !coarse;
+  stage.controls.enableZoom = false;
+  stage.controls.autoRotate = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  stage.controls.autoRotateSpeed = 0.55;
+  stage.onInteract = () => { stage.controls.autoRotate = false; };
+  el.classList.add('is-ready');
+  $('.hero__slabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-slab]');
+    if (!b) return;
+    $$('.hero__slab').forEach((x) => x.classList.toggle('is-on', x === b));
+    cfg = { ...cfg, slab: b.dataset.slab };
+    $('#hero-slab').textContent = getSlab(cfg.slab).name;
+    $('#hero-cta').href = `#/table/atlas?slab=${cfg.slab}`;
+    table.apply(cfg);
+  });
 }
 
 function pageTables() {

@@ -8,7 +8,7 @@ import { mergeGeometries, mergeVertices, toCreasedNormals } from 'three/examples
 import { HorizontalBlurShader } from 'three/examples/jsm/shaders/HorizontalBlurShader.js';
 import { VerticalBlurShader } from 'three/examples/jsm/shaders/VerticalBlurShader.js';
 import { SURFACES, getSlab, getFinish, getVeneer, dims } from './data.js';
-import { veneerCanvas, brushedCanvas, grainCanvas } from './textures.js';
+import { veneerCanvas, brushedCanvas, grainCanvas, detailCanvas } from './textures.js';
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const lerp = THREE.MathUtils.lerp;
@@ -282,6 +282,7 @@ function sharedTextures() {
     brushedV: bV,
     brushedH: bH,
     grain: mk(grainCanvas(), 9),
+    detail: mk(detailCanvas(), 1),
   };
   return shared;
 }
@@ -534,6 +535,20 @@ export class Table {
     const tx = sharedTextures();
     this.tx = tx;
     this.topMat = new THREE.MeshPhysicalMaterial({ roughness: 0.2, roughnessMap: tx.grain, envMapIntensity: 0.7 });
+    this.detailAmt = { value: 0.1 };
+    this.topMat.onBeforeCompile = (sh) => {
+      sh.uniforms.detailMap = { value: tx.detail };
+      sh.uniforms.detailAmt = this.detailAmt;
+      sh.fragmentShader = `uniform sampler2D detailMap;\nuniform float detailAmt;\n${sh.fragmentShader.replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+        #ifdef USE_MAP
+          float dA = texture2D(detailMap, vMapUv * vec2(23.0, 10.6)).r;
+          float dB = texture2D(detailMap, vMapUv * vec2(83.0, 38.3)).r;
+          diffuseColor.rgb *= 1.0 + detailAmt * ((dA - 0.5) * 0.8 + (dB - 0.5) * 0.7);
+        #endif`,
+      )}`;
+    };
     this.edgeMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.45 });
     this.frameMat = new THREE.MeshStandardMaterial({ color: 0x18181a, roughness: 0.55, metalness: 0.3 });
     this.legMatV = new THREE.MeshPhysicalMaterial({ envMapIntensity: 1.1 });
@@ -589,7 +604,7 @@ export class Table {
         m.needsUpdate = true;
       }
       m.color.set(f.color);
-      if (f.brushed) m.color.multiplyScalar(1.12);
+      
       m.metalness = f.metalness;
       m.roughness = f.roughness;
       m.sheen = f.id === 'velvet' ? 0.6 : 0;
@@ -610,6 +625,7 @@ export class Table {
       m.clearcoat = g > 0.25 ? lerp(0.2, 1, g) : 0;
       m.clearcoatRoughness = lerp(0.3, 0.02, g);
       m.bumpMap = null;
+      this.detailAmt.value = 0;
       this.edgeMat.color.set(getVeneer(cfg.veneer).base);
     } else {
       const slab = getSlab(cfg.slab);
@@ -617,6 +633,7 @@ export class Table {
       map.repeat.set(1 / 2.6, 1 / 1.2);
       map.offset.set(0.5, 0.5);
       const sf = SURFACES[slab.surface];
+      this.detailAmt.value = sf.bump ? 0.16 : 0.11;
       m.roughness = sf.roughness;
       m.clearcoat = sf.clearcoat;
       m.clearcoatRoughness = sf.clearcoatRoughness;
@@ -652,7 +669,11 @@ export class Table {
     else if (name === 'detail') {
       const target = new THREE.Vector3(L / 2 - 0.25, 0.55, W / 2 - 0.2);
       at(rad(52), rad(14), 1.25, target);
-    } else at(rad(38), rad(21), d);
+    } else if (name === 'hero') {
+      const narrow = this.stage.camera.aspect < 1.1;
+      at(rad(34), rad(narrow ? 22 : 17), d * (narrow ? 1.3 : 0.9), new THREE.Vector3(0, 0.36, 0));
+    }
+    else at(rad(38), rad(21), d);
   }
 }
 

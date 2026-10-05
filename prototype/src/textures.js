@@ -162,10 +162,10 @@ export function brushedCanvas(vertical = true) {
   ctx.fillStyle = 'rgb(222,222,222)';
   ctx.fillRect(0, 0, s, s);
   const rand = rng(vertical ? 21 : 42);
-  for (let i = 0; i < 2600; i++) {
+  for (let i = 0; i < 3400; i++) {
     const x = rand() * s;
     const tone = rand() < 0.5 ? 255 : 120;
-    ctx.strokeStyle = `rgba(${tone},${tone},${tone},${rand() * 0.14})`;
+    ctx.strokeStyle = `rgba(${tone},${tone},${tone},${rand() * 0.24})`;
     ctx.lineWidth = rand() * 1.8 + 0.3;
     ctx.beginPath();
     if (vertical) {
@@ -192,6 +192,30 @@ export function grainCanvas() {
     const g = 205 + rand() * 50;
     img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = g;
     img.data[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv;
+}
+
+// Мелкая минеральная структура камня: добавляет резкости поверх фото плиты
+export function detailCanvas() {
+  noiseTable();
+  const s = 512;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = s;
+  const ctx = cv.getContext('2d');
+  const img = ctx.createImageData(s, s);
+  const rand = rng(77);
+  for (let y = 0; y < s; y++) {
+    for (let x = 0; x < s; x++) {
+      const u = x / s;
+      const v = y / s;
+      let n = n2(u * 4, v * 4) * 0.55 + n2(u * 8 + 0.3, v * 8 + 0.7) * 0.3 + rand() * 0.15;
+      n = Math.max(0, Math.min(1, (n - 0.5) * 2.2 + 0.5));
+      const i = (y * s + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = n * 255;
+      img.data[i + 3] = 255;
+    }
   }
   ctx.putImageData(img, 0, 0);
   return cv;
