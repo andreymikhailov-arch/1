@@ -280,3 +280,6 @@ input[type="range"] { width: 100%; accent-color: var(--brass); min-height: 32px;
   .hero__math { position: static; padding: 0 var(--gutter) 24px; }
   .models { gap: 0; padding-block: 64px; }
 }
+
+.stage__sep { width: 1px; background: var(--line); margin: 6px 4px; }
+.cfg__stage.is-room { background: #e9e3d9; }

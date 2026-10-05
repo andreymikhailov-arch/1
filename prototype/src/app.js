@@ -348,6 +348,8 @@ async function pageTable(model, query) {
           <button type="button" data-view="top">Сверху</button>
           <button type="button" data-view="front">Спереди</button>
           <button type="button" data-view="detail">Деталь</button>
+          <span class="stage__sep" aria-hidden="true"></span>
+          <button type="button" data-room aria-pressed="false">Интерьер</button>
         </div>
         <p class="stage__hint">Вращайте стол мышью или пальцем</p>
         <p class="stage__loading" id="stage-loading">Загружаем 3D…</p>
@@ -410,6 +412,14 @@ async function pageTable(model, query) {
   $('.cfg').addEventListener('click', (e) => {
     const b = e.target.closest('[data-set]');
     if (b) update({ [b.dataset.set]: b.dataset.val });
+    const rb = e.target.closest('[data-room]');
+    if (rb) {
+      const on = rb.getAttribute('aria-pressed') !== 'true';
+      rb.setAttribute('aria-pressed', on);
+      rb.classList.toggle('is-on', on);
+      $('#stage').classList.toggle('is-room', on);
+      stage.setRoom(on, veneerCanvas(getVeneer('oak'), 'straight', { Lm: 3.2, Wm: 1.4, width: 1600 }));
+    }
     const v = e.target.closest('[data-view]');
     if (v) {
       $$('.stage__views button').forEach((x) => x.classList.toggle('is-on', x === v));

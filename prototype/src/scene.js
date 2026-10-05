@@ -65,6 +65,40 @@ export class Stage {
     this.raf = requestAnimationFrame(this.loop);
   }
 
+  // Интерьер: пол из дубовой доски и стена, вместо студийного фона
+  setRoom(on, floorCanvas) {
+    if (!this.room && on) {
+      const g = new THREE.Group();
+      const ft = new THREE.CanvasTexture(floorCanvas);
+      ft.colorSpace = THREE.SRGBColorSpace;
+      ft.wrapS = ft.wrapT = THREE.RepeatWrapping;
+      ft.repeat.set(4, 9);
+      ft.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(13, 13).rotateX(-Math.PI / 2),
+        new THREE.MeshStandardMaterial({ map: ft, color: '#ddd5c8', roughness: 0.5, envMapIntensity: 0.6 }),
+      );
+      floor.position.y = -0.004;
+      // пол рисуется первым и не пишет глубину – тень гарантированно ложится поверх
+      floor.renderOrder = -1;
+      floor.material.depthWrite = false;
+      const wallMat = new THREE.MeshStandardMaterial({ color: '#e9e3d9', roughness: 0.95 });
+      const wall = new THREE.Mesh(new THREE.PlaneGeometry(13, 5), wallMat);
+      wall.position.set(0, 2.5, -3.2);
+      const wall2 = new THREE.Mesh(new THREE.PlaneGeometry(13, 5), wallMat);
+      wall2.rotation.y = Math.PI / 2;
+      wall2.position.set(-4.2, 2.5, 0);
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(13, 0.08, 0.015), new THREE.MeshStandardMaterial({ color: '#d9d1c4', roughness: 0.8 }));
+      plinth.position.set(0, 0.04, -3.19);
+      g.add(floor, wall, wall2, plinth);
+      this.room = g;
+      this.scene.add(g);
+    }
+    if (this.room) this.room.visible = on;
+    this.controls.maxDistance = on ? 5.6 : 14;
+    this.invalidate();
+  }
+
   invalidate(n = 2) {
     this.frames = Math.max(this.frames, n);
   }
@@ -97,7 +131,7 @@ export class Stage {
     const geo = new THREE.PlaneGeometry(size, size).rotateX(Math.PI / 2);
     this.shadowPlane = new THREE.Mesh(
       geo,
-      new THREE.MeshBasicMaterial({ map: this.rt.texture, transparent: true, depthWrite: false, opacity: 0.92 }),
+      new THREE.MeshBasicMaterial({ map: this.rt.texture, transparent: true, depthWrite: false, opacity: 0.92, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }),
     );
     this.shadowPlane.renderOrder = 1;
     this.shadowPlane.scale.y = -1;
@@ -107,14 +141,16 @@ export class Stage {
     g.add(this.blurPlane);
     this.shadowCam = new THREE.OrthographicCamera(-size / 2, size / 2, size / 2, -size / 2, 0, height);
     this.shadowCam.rotation.x = Math.PI / 2;
+    // камера чуть ниже пола, чтобы видеть донца опор, стоящих на полу
+    this.shadowCam.position.y = -0.012;
     g.add(this.shadowCam);
     const dm = new THREE.MeshDepthMaterial();
-    dm.userData.darkness = { value: 1.25 };
+    dm.userData.darkness = { value: 2.4 };
     dm.onBeforeCompile = (shader) => {
       shader.uniforms.darkness = dm.userData.darkness;
       shader.fragmentShader = `uniform float darkness;\n${shader.fragmentShader.replace(
         'gl_FragColor = vec4( vec3( 1.0 - fragCoordZ ), opacity );',
-        'gl_FragColor = vec4( vec3( 0.0 ), ( 1.0 - fragCoordZ ) * darkness );',
+        'gl_FragColor = vec4( vec3( 0.0 ), pow( 1.0 - fragCoordZ, 2.2 ) * darkness );',
       )}`;
     };
     dm.side = THREE.DoubleSide;
@@ -147,6 +183,8 @@ export class Stage {
   renderShadow() {
     const r = this.renderer;
     this.shadowPlane.visible = false;
+    const roomOn = this.room?.visible;
+    if (this.room) this.room.visible = false;
     const alpha = r.getClearAlpha();
     r.setClearAlpha(0);
     this.scene.overrideMaterial = this.depthMat;
@@ -154,10 +192,11 @@ export class Stage {
     r.clear();
     r.render(this.scene, this.shadowCam);
     this.scene.overrideMaterial = null;
-    this.blur(2.2);
-    this.blur(0.9);
+    this.blur(1.6);
+    this.blur(0.7);
     r.setRenderTarget(null);
     r.setClearAlpha(alpha);
+    if (this.room) this.room.visible = roomOn;
     this.shadowPlane.visible = true;
   }
 
@@ -454,22 +493,22 @@ function legsAtlas(L, legH) {
 function legsSamurai(L, legH) {
   const k = clamp(L / 2.4, 0.86, 1.12);
   return [-1, 1].map((side) => {
-    const geo = loft(ellipse(0.2 * k, 0.26), {
+    const geo = loft(ellipse(0.28 * k, 0.12), {
       height: legH,
       xform: (x, z, h) => {
-        const cx = side * lerp(0.27, -0.15, h) * k;
-        return [cx + x * lerp(1, 0.6, h), z * lerp(1, 0.86, h)];
+        const cx = side * lerp(0.25, -0.13, h) * k;
+        return [cx + x * lerp(1, 0.46, h), z * lerp(1, 0.82, h)];
       },
     });
-    geo.translate(0, 0, side * 0.015);
+    geo.translate(0, 0, side * 0.07);
     return { geo, dir: 'v' };
   });
 }
 
 function legsInfinity(L, legH) {
   const k = clamp(L / 2.4, 0.82, 1.15);
-  const T = 0.022;
-  const D = 0.12;
+  const T = 0.042;
+  const D = 0.15;
   const pts = [
     [-0.8, legH + 0.01], [-0.67, 0.42], [-0.54, 0.12], [-0.46, 0.02], [-0.37, 0.035],
     [-0.08, 0.22], [0.36, 0.5], [0.77, legH + 0.01],
@@ -514,8 +553,8 @@ function legsInfinity(L, legH) {
       }
     }
   }
-  geo.translate(0, 0, 0.09);
-  g2.translate(0, 0, -0.09);
+  geo.translate(0, 0, 0.1);
+  g2.translate(0, 0, -0.1);
   return [
     { geo, dir: 'h' },
     { geo: g2, dir: 'h' },
@@ -665,7 +704,7 @@ export class Table {
     };
     const rad = THREE.MathUtils.degToRad;
     if (name === 'top') at(rad(0), rad(68), d * 0.95, new THREE.Vector3(0, 0.6, 0));
-    else if (name === 'front') at(rad(0), rad(4), d * 1.02, new THREE.Vector3(0, 0.42, 0));
+    else if (name === 'front') at(rad(0), rad(9), d * 0.95, new THREE.Vector3(0, 0.4, 0));
     else if (name === 'detail') {
       const target = new THREE.Vector3(L / 2 - 0.25, 0.55, W / 2 - 0.2);
       at(rad(52), rad(14), 1.25, target);
