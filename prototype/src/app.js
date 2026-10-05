@@ -131,25 +131,38 @@ function bindModels() {
 
 // ---------- страницы ----------
 
+const HALL = [
+  { n: '01', name: 'Мягкая мебель', href: '#/soft' },
+  { n: '02', name: 'Столы', href: '#/tables' },
+  { n: '03', name: 'Полигональные скульптуры', href: '#/sculptures' },
+  { n: '04', name: 'Стулья и кресла', href: '#/chairs' },
+];
+
+const letters = (t) => [...t].map((ch, i) => (ch === ' ' ? ' ' : `<span style="--i:${i}">${ch}</span>`)).join('');
+
 function pageHome() {
   const picks = ['golden-eye-glitter', 'manaos-green-pulido', 'camelot-pulido', 'wacom-forest-pulido', 'pandora-pulido', 'elyt-pulido', 'ravena-natural', 'plain-cement-coffee-grey-matt'];
   app.innerHTML = `
-    <section class="hero">
-      <div class="hero__copy">
-        <h1>Обеденные столы из керамогранита и шпона</h1>
-        <p class="lead">Плита, опора, форма и размер – собираете сами и сразу видите цену. Делаем около месяца.</p>
-        <div class="hero__actions">
-          <a class="btn btn--primary" id="hero-cta" href="#/table/atlas">Собрать стол</a>
-          <a class="link" href="#models">Все модели</a>
-        </div>
-        <div class="hero__pick">
-          <p class="hero__pick-label">Примерьте плиту <span id="hero-slab">${getSlab(picks[0]).name}</span></p>
+    <section class="hall" id="hall">
+      <div class="hall__head">
+        <h1 class="hall__title" aria-label="Пространство. Форма. Характер.">${letters('Пространство.')}<br>${letters('Форма. Характер.')}</h1>
+        <p class="hall__sub">Коллекционная мебель и скульптуры IDODOM</p>
+      </div>
+      ${HALL.map((h) => `<a class="hall__label" href="${h.href}"><span class="hall__num">${h.n}</span><span class="hall__name">${h.name}</span></a>`).join('')}
+      <div class="hall__foot">
+        <div class="hall__pick">
+          <p class="hall__pick-label">На подиуме – ATLAS. Примерьте плиту: <span id="hero-slab">${getSlab(picks[0]).name}</span></p>
           <div class="hero__slabs">
             ${picks.map((id, i) => `<button type="button" class="hero__slab${i === 0 ? ' is-on' : ''}" data-slab="${id}" aria-label="${getSlab(id).name}" style="background-image:url(${getSlab(id).img})"></button>`).join('')}
           </div>
         </div>
+        <a class="btn btn--primary" id="hero-cta" href="#/table/atlas">Собрать стол</a>
       </div>
-      <div class="hero__stage" id="hero-stage"></div>
+    </section>
+    <section class="intro">
+      <p class="intro__n">02 — Столы</p>
+      <h2>Обеденные столы из керамогранита и шпона</h2>
+      <p class="lead">Плита, опора, форма и размер – собираете сами и сразу видите цену. Делаем около месяца.</p>
       <p class="hero__math"><span>16 плит</span> × <span>3 опоры</span> × <span>5 отделок</span> × <span>4 размера</span> × <span>2 формы</span> = <b>1 920 столов</b></p>
     </section>
     ${modelList()}
@@ -157,12 +170,13 @@ function pageHome() {
     ${veneerBlock()}
     <section class="cats">
       <a class="cat cat--wide" href="#/sculptures">
+        <span class="cat__n">03</span>
         <span class="cat__name">Полигональные скульптуры</span>
         <span class="cat__text">Для интерьера, сада и города. Делаем по каталогу форм и по вашему эскизу, вместе с малыми архитектурными формами.</span>
       </a>
-      <a class="cat" href="#/soft"><span class="cat__name">Мягкая мебель</span><span class="cat__text">Кожа и ткань, модульные диваны.</span></a>
-      <a class="cat" href="#/beds"><span class="cat__name">Кровати</span><span class="cat__text">С мягким изголовьем, под размер.</span></a>
-      <a class="cat" href="#/chairs"><span class="cat__name">Стулья</span><span class="cat__text">В пару к столам.</span></a>
+      <a class="cat" href="#/soft"><span class="cat__n">01</span><span class="cat__name">Мягкая мебель</span><span class="cat__text">Кожа и ткань, модульные диваны.</span></a>
+      <a class="cat" href="#/chairs"><span class="cat__n">04</span><span class="cat__name">Стулья и кресла</span><span class="cat__text">В пару к столам.</span></a>
+      <a class="cat" href="#/beds"><span class="cat__n">05</span><span class="cat__name">Кровати</span><span class="cat__text">С мягким изголовьем, под размер.</span></a>
     </section>
     ${remoteSteps()}
     <section class="pro">
@@ -171,24 +185,16 @@ function pageHome() {
     </section>`;
   bindModels();
   drawVeneerArt();
-  initHero(picks);
+  initHall(picks);
 }
 
-async function initHero(picks) {
-  const el = document.getElementById('hero-stage');
-  const { Stage, Table } = await loadScene();
+async function initHall(picks) {
+  const el = document.getElementById('hall');
+  const { Hall } = await import('./hall.js');
   if (!document.body.contains(el)) return;
-  stage = new Stage(el);
-  const table = new Table(stage);
+  stage = new Hall(el, $$('.hall__label'));
   let cfg = { ...DEFAULT_CONFIG, model: 'atlas', slab: picks[0], size: '240x120', finish: 'brass' };
-  await table.apply(cfg);
-  table.view('hero');
-  const coarse = matchMedia('(pointer: coarse)').matches;
-  stage.controls.enabled = !coarse;
-  stage.controls.enableZoom = false;
-  stage.controls.autoRotate = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-  stage.controls.autoRotateSpeed = 0.55;
-  stage.onInteract = () => { stage.controls.autoRotate = false; };
+  await stage.show(cfg);
   el.classList.add('is-ready');
   $('.hero__slabs').addEventListener('click', (e) => {
     const b = e.target.closest('[data-slab]');
@@ -197,7 +203,7 @@ async function initHero(picks) {
     cfg = { ...cfg, slab: b.dataset.slab };
     $('#hero-slab').textContent = getSlab(cfg.slab).name;
     $('#hero-cta').href = `#/table/atlas?slab=${cfg.slab}`;
-    table.apply(cfg);
+    stage.show(cfg);
   });
 }
 

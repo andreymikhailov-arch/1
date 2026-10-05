@@ -220,3 +220,30 @@ export function detailCanvas() {
   ctx.putImageData(img, 0, 0);
   return cv;
 }
+
+// Бетон: крупные разводы, мелкая пористость и редкие раковины
+export function concreteCanvas() {
+  noiseTable();
+  const s = 512;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = s;
+  const ctx = cv.getContext('2d');
+  const img = ctx.createImageData(s, s);
+  const rand = rng(91);
+  for (let y = 0; y < s; y++) {
+    for (let x = 0; x < s; x++) {
+      const u = x / s;
+      const v = y / s;
+      let n = 0.55 + (n2(u, v) - 0.5) * 0.5 + (n2(u * 4 + 0.2, v * 4 + 0.9) - 0.5) * 0.25 + (rand() - 0.5) * 0.12;
+      if (rand() > 0.9985) n *= 0.55;
+      const g = Math.max(0, Math.min(255, n * 255));
+      const i = (y * s + x) * 4;
+      img.data[i] = g;
+      img.data[i + 1] = g * 0.985;
+      img.data[i + 2] = g * 0.96;
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv;
+}
