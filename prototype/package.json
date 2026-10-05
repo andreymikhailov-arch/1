@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "description": "Прототип витрины IDODOM с 3D-конфигуратором столов",
   "scripts": {
-    "assets": "node tools/extract-assets.cjs"
+    "assets": "node tools/extract-assets.cjs",
+    "build": "node build.mjs"
   },
   "dependencies": {
     "three": "0.160.0"

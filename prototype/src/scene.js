@@ -117,6 +117,7 @@ export class Stage {
         'gl_FragColor = vec4( vec3( 0.0 ), ( 1.0 - fragCoordZ ) * darkness );',
       )}`;
     };
+    dm.side = THREE.DoubleSide;
     dm.depthTest = false;
     dm.depthWrite = false;
     this.depthMat = dm;
@@ -532,7 +533,7 @@ export class Table {
     stage.subject.add(this.group);
     const tx = sharedTextures();
     this.tx = tx;
-    this.topMat = new THREE.MeshPhysicalMaterial({ roughness: 0.2, roughnessMap: tx.grain, envMapIntensity: 1 });
+    this.topMat = new THREE.MeshPhysicalMaterial({ roughness: 0.2, roughnessMap: tx.grain, envMapIntensity: 0.7 });
     this.edgeMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.45 });
     this.frameMat = new THREE.MeshStandardMaterial({ color: 0x18181a, roughness: 0.55, metalness: 0.3 });
     this.legMatV = new THREE.MeshPhysicalMaterial({ envMapIntensity: 1.1 });
@@ -639,14 +640,14 @@ export class Table {
   view(name) {
     const L = this.L || 2.4;
     const W = this.W || 1.2;
-    const d = L * 1.85 + 1.3;
+    const d = L * 1.6 + 1.1;
     const t = new THREE.Vector3(0, 0.4, 0);
     const at = (az, el, dist, target = t) => {
       const p = new THREE.Vector3().setFromSphericalCoords(dist, Math.PI / 2 - el, az).add(target);
       this.stage.flyTo(p, target);
     };
     const rad = THREE.MathUtils.degToRad;
-    if (name === 'top') at(rad(0), rad(84), d * 0.98, new THREE.Vector3(0, 0.6, 0));
+    if (name === 'top') at(rad(0), rad(68), d * 0.95, new THREE.Vector3(0, 0.6, 0));
     else if (name === 'front') at(rad(0), rad(4), d * 1.02, new THREE.Vector3(0, 0.42, 0));
     else if (name === 'detail') {
       const target = new THREE.Vector3(L / 2 - 0.25, 0.55, W / 2 - 0.2);
@@ -681,8 +682,8 @@ export function sculptureGeometry(form) {
     y += (rand() - 0.5) * j;
     z += (rand() - 0.5) * j;
     if (form === 'drop') {
-      const h = (y + 1) / 2;
-      const s = 0.62 * Math.pow(Math.sin(Math.PI * Math.pow(h, 0.72)), 0.9) + 0.04;
+      const h = 1 - clamp((y + 1) / 2, 0, 1);
+      const s = 0.62 * Math.pow(Math.max(0, Math.sin(Math.PI * Math.pow(h, 0.72))), 0.9) + 0.04;
       x *= s * 1.25;
       z *= s * 1.25;
       y *= 1.15;

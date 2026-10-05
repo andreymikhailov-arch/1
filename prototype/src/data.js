@@ -34,7 +34,7 @@ export const SLAB_GROUPS = [
 ];
 
 export const SURFACES = {
-  polished: { label: 'глянец', roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04 },
+  polished: { label: 'глянец', roughness: 0.14, clearcoat: 0.6, clearcoatRoughness: 0.05 },
   matt: { label: 'мат', roughness: 0.62, clearcoat: 0, clearcoatRoughness: 0 },
   carving: { label: 'рельеф', roughness: 0.7, clearcoat: 0, clearcoatRoughness: 0, bump: true },
 };
